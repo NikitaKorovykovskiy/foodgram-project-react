@@ -1,19 +1,10 @@
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers
-from rest_framework.validators import (
-    UniqueTogetherValidator,
-    UniqueValidator,
-)
-
 from ingredients.models import Ingredient
-from recipes.models import (
-    Cart,
-    Favorite,
-    IngredientInRecipe,
-    Recipe,
-    TagRecipe,
-)
+from recipes.models import (Cart, Favorite, IngredientInRecipe, Recipe,
+                            TagRecipe)
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from tags.models import Tag
 from user.models import User
 

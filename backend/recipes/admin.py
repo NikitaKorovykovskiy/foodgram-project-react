@@ -1,13 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import register
-
-from recipes.models import (
-    Cart,
-    Favorite,
-    Ingredient,
-    IngredientInRecipe,
-    Recipe,
-)
+from recipes.models import (Cart, Favorite, Ingredient, IngredientInRecipe,
+                            Recipe)
 
 EMPTY = "< Тут Пусто >"
 
