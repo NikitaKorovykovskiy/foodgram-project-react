@@ -44,8 +44,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          context: ./backend/foodgram
-          file: ./backend/foodgram/Dockerfile
+          context: ./backend/
           tags: ${{ secrets.DOCKER_USERNAME }}/diplom:v1
 
   deploy:
@@ -62,7 +61,7 @@ jobs:
           script: |
             # Выполняет pull образа с DockerHub
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/diplom:v1
-            # sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:latest
             #остановка  всех контейнеров
             sudo docker-compose stop
             sudo docker-compose rm web
