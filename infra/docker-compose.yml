@@ -18,9 +18,8 @@ services:
       - ./.env
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: nikitakorovykovskiy/frontend:latest
+    image: nikitakorovykovskiy/frontend:latest
+    restart: always
     volumes:
       - ../frontend/:/app/result_build/
 
