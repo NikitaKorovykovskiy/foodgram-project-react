@@ -1,10 +1,19 @@
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
-from ingredients.models import Ingredient
-from recipes.models import (Cart, Favorite, IngredientInRecipe, Recipe,
-                            TagRecipe)
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import (
+    UniqueTogetherValidator,
+    UniqueValidator,
+)
+
+from ingredients.models import Ingredient
+from recipes.models import (
+    Cart,
+    Favorite,
+    IngredientInRecipe,
+    Recipe,
+    TagRecipe,
+)
 from tags.models import Tag
 from user.models import User
 
@@ -86,12 +95,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     ingredients = IngredientAmountGetSerializer(
         read_only=True, many=True, source="recipe_ingredients"
     )
-    is_favorited = serializers.SerializerMethodField(
-        method_name="get_is_favorited"
-    )
-    is_in_shopping_cart = serializers.SerializerMethodField(
-        method_name="get_is_in_shopping_cart"
-    )
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
@@ -108,25 +113,22 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             "is_in_shopping_cart",
         )
 
-    # def get_is_favorited(self, obj):
-    #     request = self.context.get("request")
-    #     if request is None or request.user.is_anonymous:
-    #         return False
-    #     if Favorite.objects.filter(
-    #         user=request.user, recipe__id=obj.id
-    #     ).exists():
-    #         return True
-    #     return False
+    def get_is_favorited(self, obj):
+        request = self.context.get("request")
+        if request is None or request.user.is_anonymous:
+            return False
+        return Favorite.objects.filter(
+            user=request.user, recipe__id=obj.id
+        ).exists()
 
-    # def get_is_in_shopping_cart(self, obj):
-    #     request = self.context.get("request")
-    #     if request is None or request.user.is_anonymous:
-    #         return False
-    #     if Cart.objects.filter(
-    #         user=request.user, recipe__id=obj.id
-    #     ).exists():
-    #         return True
-    #     return False
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get("request")
+        if request is None or request.user.is_anonymous:
+            return False
+        return Cart.objects.filter(
+            user=request.user, recipe__id=obj.id
+        ).exists()
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
@@ -155,9 +157,9 @@ class RecipePostSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop("ingredients")
         recipe = Recipe.objects.create(**validated_data)
         for tag in tags_set:
-            TagRecipe.objects.create(recipe=recipe, tag=tag)
+            TagRecipe.objects.bulk_create(recipe=recipe, tag=tag)
         for ingredient in ingredients:
-            IngredientInRecipe.objects.create(
+            IngredientInRecipe.objects.bulk_create(
                 ingredient=ingredient["id"],
                 recipe=recipe,
                 amount=ingredient["amount"],
@@ -165,19 +167,14 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        instance.image = validated_data.get("image", instance.image)
-        instance.name = validated_data.get("name", instance.name)
-        instance.text = validated_data.get("text", instance.text)
-        instance.cooking_time = validated_data.get(
-            "cooking_time", instance.cooking_time
-        )
+        instance = super().update(instance, validated_data)
         instance.tags.clear()
         tags_data = self.initial_data.get("tags")
         instance.tags.set(tags_data)
         IngredientInRecipe.objects.filter(recipe=instance).all().delete()
         ingredients = validated_data.get("ingredients")
         for ingredient in ingredients:
-            IngredientInRecipe.objects.create(
+            IngredientInRecipe.objects.bulk_create(
                 ingredient=ingredient["id"],
                 recipe=instance,
                 amount=ingredient["amount"],
@@ -186,30 +183,21 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return instance
 
     def validate(self, data):
-        ingredients = self.initial_data.get("ingredients")
+        ingredients = self.initial_data.get('ingredients')
         if not ingredients:
+            raise serializers.ValidationError({
+                'ingredients': 'Нужен хоть один ингридиент для рецепта'})
+        ids = [item['id'] for item in ingredients]
+        if len(ids) != len(set(ids)):
             raise serializers.ValidationError(
-                {"ingredients": "Нужен хоть один ингридиент для рецепта"}
+                'Ингредиенты в рецепте должны быть уникальными!'
             )
-        ingredient_list = []
         for ingredient_item in ingredients:
-            ingredient = get_object_or_404(
-                Ingredient, id=ingredient_item["id"]
-            )
-            if ingredient in ingredient_list:
-                raise serializers.ValidationError(
-                    "Ингредиенты должны " "быть уникальными"
-                )
-            ingredient_list.append(ingredient)
-            if int(ingredient_item["amount"]) < 1:
-                raise serializers.ValidationError(
-                    {
-                        "ingredients": (
-                            "Убедитесь, что значение количества "
-                            "ингредиента больше 1"
-                        )
-                    }
-                )
+            if int(ingredient_item['amount']) < 1:
+                raise serializers.ValidationError({
+                    'ingredients': ('Убедитесь, что значение количества '
+                                    'ингредиента больше 1')
+                })
         return data
 
 

@@ -1,15 +1,16 @@
-from api.paginators import LimitPageNumberPagination
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from recipes.models import User
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from api.paginators import LimitPageNumberPagination
+from recipes.models import User
 from user.models import Subscribe
-from user.serializers import SubShowSerializer
+from user.serializers import SubscribeShowSerializer
 
 
-class CustomUserViewSet(UserViewSet):
+class SubscribeUserViewSet(UserViewSet):
     """Кастомный вьюсет пользователя."""
 
     queryset = User.objects.all()
@@ -38,7 +39,7 @@ class CustomUserViewSet(UserViewSet):
                     "errors": "Вы уже подписаны на этого пользователя."
                 }
                 return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            serializer = SubShowSerializer(
+            serializer = SubscribeShowSerializer(
                 obj, context={"request": request}
             )
             return Response(
@@ -63,7 +64,7 @@ class CustomUserViewSet(UserViewSet):
             Subscribe.objects.filter(user=request.user)
         )
 
-        serializer = SubShowSerializer(
+        serializer = SubscribeShowSerializer(
             pages, many=True, context={"request": request}
         )
 

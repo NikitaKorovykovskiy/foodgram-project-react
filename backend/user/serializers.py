@@ -1,5 +1,7 @@
-from api.serializers import RecipeGetSerializer
 from rest_framework import serializers
+
+from api.serializers import RecipeGetSerializer
+from foodgram.settings import LIMITRECIPE
 from user.models import Subscribe, User
 
 
@@ -12,15 +14,7 @@ class UserShowSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=150, required=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    def get_is_subscribed(self, username):
-        user = self.context["request"].user
-        return (
-            not user.is_anonymous
-            and Subscribe.objects.filter(
-                user=user, following=username
-            ).exists()
-        )
-
+    
     class Meta:
         model = User
         fields = (
@@ -32,6 +26,14 @@ class UserShowSerializer(serializers.ModelSerializer):
             "is_subscribed",
         )
 
+    def get_is_subscribed(self, username):
+        user = self.context["request"].user
+        return (
+            not user.is_anonymous
+            and Subscribe.objects.filter(
+                user=user, following=username
+            ).exists()
+        )
 
 class UserSerializer(serializers.ModelSerializer):
     """Основной кастомный сериализатор пользователя с доп. полями."""
@@ -95,7 +97,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField(max_length=254)
-    banned_names = ("me", "admin", "ADMIN", "administrator", "moderator")
+    banned_names = ("ME", "ADMIN", "ADMIN", "ADMINISTRATOR", "MODERATOR")
 
     class Meta:
         model = User
@@ -133,7 +135,7 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField(max_length=24)
 
 
-class SubShowSerializer(UserShowSerializer):
+class SubscribeShowSerializer(UserShowSerializer):
     """Сериализатор для вывода пользователя/списка пользователей."""
 
     email = serializers.ReadOnlyField(source="following.email")
@@ -164,8 +166,6 @@ class SubShowSerializer(UserShowSerializer):
         """Получаем рецепты пользователя."""
         limit = self.context.get("request").query_params.get(
             "recipes_limit"
-        )
-        if not limit:
-            limit = 3
-        recipes = data.following.recipes.all()[: int(limit)]
+        ) or LIMITRECIPE
+        recipes = data.following.recipes.all()[:int(limit)]
         return RecipeGetSerializer(recipes, many=True).data

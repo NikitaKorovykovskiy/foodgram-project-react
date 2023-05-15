@@ -9,6 +9,8 @@ services:
   web:
     image: nikitakorovykovskiy/diplom:v1
     restart: always
+    ports:
+      - '8000:8000'
     volumes:
       - static_value:/app/backend_static/
       - media_value:/app/backend_media/

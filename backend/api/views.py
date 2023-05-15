@@ -1,20 +1,21 @@
 from http import HTTPStatus
 
+from django.db.models import Sum
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django_filters import rest_framework as filters
+from rest_framework import permissions, status, viewsets
+from rest_framework.response import Response
+
 from api.filter import AuthorAndTagFilter, IngredientSearchFilter
 from api.paginators import LimitPageNumberPagination
 from api.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from api.serializers import (BaseIngredientSerializer, CartSerializer,
                              FavoriteSerializer, RecipeGetSerializer,
                              RecipePostSerializer)
-from django.db.models import Sum
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django_filters import rest_framework as filters
 from foodgram.settings import FILENAME
 from ingredients.models import Ingredient
 from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
-from rest_framework import permissions, status, viewsets
-from rest_framework.response import Response
 from tags.models import Tag
 from tags.serializers import TagSerializer
 
@@ -135,8 +136,8 @@ class CartViewSet(viewsets.ModelViewSet):
         )
 
         content = [
-            f'{item["ingredient__name"]}\
-                ({item["ingredient__measurement_unit"]})'
+            f'{item["ingredient__name"]}'
+            f'({item["ingredient__measurement_unit"]})'
             f'- {item["ingredient_total"]}\n'
             for item in shopping_list
         ]

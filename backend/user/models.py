@@ -54,6 +54,9 @@ class User(AbstractUser):
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
 
+    def __str__(self):
+        return self.username
+
     @property
     def is_user(self):
         return self.role == self.USER
@@ -61,9 +64,6 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return self.is_staff or self.role == self.ADMIN
-
-    def __str__(self):
-        return self.username
 
 
 class Subscribe(models.Model):

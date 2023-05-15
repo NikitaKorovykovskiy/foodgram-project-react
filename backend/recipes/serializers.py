@@ -14,4 +14,3 @@ class RecipeSerializers(serializers.ModelSerializer):
             "text",
             "cooking_time",
         )
-        # depth = 2

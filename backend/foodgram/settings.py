@@ -46,15 +46,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "api.apps.ApiConfig",
-    "recipes.apps.RecipesConfig",
-    "user.apps.UserConfig",
-    "tags.apps.TagsConfig",
-    "ingredients.apps.IngredientsConfig",
     "rest_framework",
     "django_filters",
     "djoser",
     "rest_framework.authtoken",
+    "user.apps.UserConfig",
+    "recipes.apps.RecipesConfig",
+    "tags.apps.TagsConfig",
+    "ingredients.apps.IngredientsConfig",
+    "api.apps.ApiConfig",
 ]
 
 MIDDLEWARE = [
@@ -155,7 +155,6 @@ FILENAME = "shopping_list.txt"
 
 STATIC_URL = "/backend_static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "backend_static")
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 MEDIA_URL = "/backend_media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "backend_media")
@@ -179,3 +178,5 @@ DJOSER = {
         "user_list": ("rest_framework.permissions.AllowAny",),
     },
 }
+
+LIMITRECIPE = 6
