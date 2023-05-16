@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import (
@@ -121,7 +120,6 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             user=request.user, recipe__id=obj.id
         ).exists()
 
-
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
@@ -183,21 +181,26 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return instance
 
     def validate(self, data):
-        ingredients = self.initial_data.get('ingredients')
+        ingredients = self.initial_data.get("ingredients")
         if not ingredients:
-            raise serializers.ValidationError({
-                'ingredients': 'Нужен хоть один ингридиент для рецепта'})
-        ids = [item['id'] for item in ingredients]
+            raise serializers.ValidationError(
+                {"ingredients": "Нужен хоть один ингридиент для рецепта"}
+            )
+        ids = [item["id"] for item in ingredients]
         if len(ids) != len(set(ids)):
             raise serializers.ValidationError(
-                'Ингредиенты в рецепте должны быть уникальными!'
+                "Ингредиенты в рецепте должны быть уникальными!"
             )
         for ingredient_item in ingredients:
-            if int(ingredient_item['amount']) < 1:
-                raise serializers.ValidationError({
-                    'ingredients': ('Убедитесь, что значение количества '
-                                    'ингредиента больше 0')
-                })
+            if int(ingredient_item["amount"]) < 1:
+                raise serializers.ValidationError(
+                    {
+                        "ingredients": (
+                            "Убедитесь, что значение количества "
+                            "ингредиента больше 0"
+                        )
+                    }
+                )
         return data
 
 

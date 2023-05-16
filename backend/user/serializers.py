@@ -14,7 +14,6 @@ class UserShowSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(max_length=150, required=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    
     class Meta:
         model = User
         fields = (
@@ -34,6 +33,7 @@ class UserShowSerializer(serializers.ModelSerializer):
                 user=user, following=username
             ).exists()
         )
+
 
 class UserSerializer(serializers.ModelSerializer):
     """Основной кастомный сериализатор пользователя с доп. полями."""
@@ -164,8 +164,9 @@ class SubscribeShowSerializer(UserShowSerializer):
 
     def get_recipes(self, data):
         """Получаем рецепты пользователя."""
-        limit = self.context.get("request").query_params.get(
-            "recipes_limit"
-        ) or settings.LIMITRECIPE
-        recipes = data.following.recipes.all()[:int(limit)]
+        limit = (
+            self.context.get("request").query_params.get("recipes_limit")
+            or settings.LIMITRECIPE
+        )
+        recipes = data.following.recipes.all()[: int(limit)]
         return RecipeGetSerializer(recipes, many=True).data
