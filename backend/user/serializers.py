@@ -1,7 +1,7 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from api.serializers import RecipeGetSerializer
-from django.conf import settings
 from user.models import Subscribe, User
 
 
