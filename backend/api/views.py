@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from django.conf import settings
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -17,7 +18,6 @@ from api.serializers import (
     RecipeGetSerializer,
     RecipePostSerializer,
 )
-from foodgram.settings import FILENAME
 from ingredients.models import Ingredient
 from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
 from tags.models import Tag
@@ -148,5 +148,5 @@ class CartViewSet(viewsets.ModelViewSet):
         response = HttpResponse(content, content_type=CONTENT_TYPE)
         response[
             "Content-Disposition"
-        ] = f"attachment; filename={FILENAME}"
+        ] = f"attachment; filename={settings.FILENAME}"
         return response
