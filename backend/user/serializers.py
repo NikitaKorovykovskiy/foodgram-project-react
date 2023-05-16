@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from api.serializers import RecipeGetSerializer
-from foodgram.settings import LIMITRECIPE
+from django.conf import settings
 from user.models import Subscribe, User
 
 
@@ -97,7 +97,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField(max_length=254)
-    banned_names = ("ME", "ADMIN", "ADMIN", "ADMINISTRATOR", "MODERATOR")
+    BANNED_NAMES = ("me", "admin", "ADMIN", "administrator", "moderator")
 
     class Meta:
         model = User
@@ -107,7 +107,7 @@ class SignupSerializer(serializers.ModelSerializer):
         )
 
     def validate_username(self, data):
-        if data in self.banned_names:
+        if data in self.BANNED_NAMES:
             raise serializers.ValidationError(
                 "Нельзя использовать такое имя."
             )
@@ -166,6 +166,6 @@ class SubscribeShowSerializer(UserShowSerializer):
         """Получаем рецепты пользователя."""
         limit = self.context.get("request").query_params.get(
             "recipes_limit"
-        ) or LIMITRECIPE
+        ) or settings.LIMITRECIPE
         recipes = data.following.recipes.all()[:int(limit)]
         return RecipeGetSerializer(recipes, many=True).data

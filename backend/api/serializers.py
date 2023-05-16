@@ -196,7 +196,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             if int(ingredient_item['amount']) < 1:
                 raise serializers.ValidationError({
                     'ingredients': ('Убедитесь, что значение количества '
-                                    'ингредиента больше 1')
+                                    'ингредиента больше 0')
                 })
         return data
 
