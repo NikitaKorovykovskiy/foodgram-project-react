@@ -21,7 +21,6 @@ services:
 
   frontend:
     image: nikitakorovykovskiy/frontend:latest
-    restart: always
     volumes:
       - ../frontend/:/app/result_build/
 
