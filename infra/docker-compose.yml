@@ -9,8 +9,6 @@ services:
   web:
     image: nikitakorovykovskiy/diplom:v1
     restart: always
-    ports:
-      - '8000:8000'
     volumes:
       - static_value:/app/backend_static/
       - media_value:/app/backend_media/
@@ -27,7 +25,7 @@ services:
   nginx:
     image: nginx:1.19.3
     ports:
-      - '8084:80'
+      - '80:80'
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
