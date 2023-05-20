@@ -62,7 +62,7 @@ jobs:
           script: |
             # Выполняет pull образа с DockerHub
             sudo docker pull nikitakorovykovskiy/diplom:v1
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+            sudo docker pull nikitakorovykovskiy/frontend:latest
             #остановка  всех контейнеров
             sudo docker-compose stop
             sudo docker-compose rm web
