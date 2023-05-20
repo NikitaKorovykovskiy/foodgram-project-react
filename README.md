@@ -183,3 +183,14 @@ docker-compose exec web python manage.py collectstatic --no-input
 
 docker-compose exec web python manage.py uploadDB tags.csv ingredients.csv
 
+***
+
+Проект развернут по IP [62.84.124.236](http://foodgram-only.ddns.net/)
+
+Доступ в админ-панель:
+
+```sh
+http://62.84.124.236/admin
+login: admin (1@mail.ru)
+pass: 1
+```
