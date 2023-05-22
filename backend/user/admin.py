@@ -9,7 +9,7 @@ class UserADmin(UserAdmin):
     list_filter = ("first_name", "email")
 
 
-class SubscribeADmin(admin.ModelAdmin):
+class SubscribeADmin(UserAdmin):
     list_display = (
         "user",
         "following",
