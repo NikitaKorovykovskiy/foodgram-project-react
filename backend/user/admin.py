@@ -1,9 +1,9 @@
 from django.contrib import admin
-
+from django.contrib.auth.admin import UserAdmin
 from user.models import Subscribe, User
 
 
-class UserADmin(admin.ModelAdmin):
+class UserADmin(UserAdmin):
     list_display = ("id", "username", "first_name", "last_name", "email")
     list_filter = ("first_name", "email")
 
