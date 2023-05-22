@@ -18,7 +18,7 @@ SECRET_KEY = (
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "62.84.124.236",
+    "158.160.51.5",
     "127.0.0.1",
     "localhost",
     "foodgram-only.ddns.net",
