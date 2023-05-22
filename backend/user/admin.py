@@ -5,7 +5,7 @@ from user.models import Subscribe, User
 
 
 class UserADmin(UserAdmin):
-    list_display = ("id", "username", "first_name", "last_name")  # "email"
+    list_display = ("id", "username", "first_name", "email")
     list_filter = ("first_name", "email")
 
 
