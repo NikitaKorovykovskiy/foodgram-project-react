@@ -15,8 +15,8 @@ from api.serializers import (
     BaseIngredientSerializer,
     CartSerializer,
     FavoriteSerializer,
-    RecipeGetSerializer,
-    RecipePostSerializer,
+    # RecipeGetSerializer,
+    # RecipePostSerializer,
 )
 from ingredients.models import Ingredient
 from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
