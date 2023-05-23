@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from django.db import transaction
 from django.conf import settings
 from django.db.models import Sum
 from django.http import HttpResponse
@@ -40,25 +39,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        tags = validated_data.pop("tags")
-        ingredients = validated_data.pop("ingredients")
-        instance = super().update(instance, validated_data)
-        instance.tags.clear()
-        instance.tags.set(tags)
-        instance.ingredients.clear()
-        self.create_ingredients_amounts(
-            recipe=instance, ingredients=ingredients
-        )
-        instance.save()
-        return instance
-
-    def to_representation(self, instance):
-        request = self.context.get("request")
-        context = {"request": request}
-        return RecipeGetSerializer(instance, context=context).data
 
     # def create(self, request, *args, **kwargs):
     #     serializer = self.get_serializer(data=request.data)
