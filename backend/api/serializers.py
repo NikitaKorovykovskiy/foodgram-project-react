@@ -168,32 +168,26 @@ class RecipePostSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags)
         return self.add_ingredients(recipe, ingredients)
 
-    def validate(self, data):
-        ingredients = self.initial_data.get("ingredients")
-        if not ingredients:
-            raise serializers.ValidationError(
-                {"ingredients": "Нужен хоть один ингридиент для рецепта"}
+    def update(self, instance, validated_data):
+        instance.image = validated_data.get("image", instance.image)
+        instance.name = validated_data.get("name", instance.name)
+        instance.text = validated_data.get("text", instance.text)
+        instance.cooking_time = validated_data.get(
+            "cooking_time", instance.cooking_time
+        )
+        instance.tags.clear()
+        tags_data = self.initial_data.get("tags")
+        instance.tags.set(tags_data)
+        IngredientInRecipe.objects.filter(recipe=instance).all().delete()
+        ingredients = validated_data.get("ingredients")
+        for ingredient in ingredients:
+            IngredientInRecipe.objects.create(
+                ingredient=ingredient["id"],
+                recipe=instance,
+                amount=ingredient["amount"],
             )
-        ingredient_list = []
-        for ingredient_item in ingredients:
-            ingredient = get_object_or_404(
-                Ingredient, id=ingredient_item["id"]
-            )
-            if ingredient in ingredient_list:
-                raise serializers.ValidationError(
-                    "Ингредиенты должны " "быть уникальными"
-                )
-            ingredient_list.append(ingredient)
-            if int(ingredient_item["amount"]) < 1:
-                raise serializers.ValidationError(
-                    {
-                        "ingredients": (
-                            "Убедитесь, что значение количества "
-                            "ингредиента больше 1"
-                        )
-                    }
-                )
-        return data
+        instance.save()
+        return instance
 
     def validate(self, data):
         ingredients = self.initial_data.get("ingredients")
