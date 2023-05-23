@@ -172,6 +172,11 @@ class RecipePostSerializer(serializers.ModelSerializer):
         self.add_ingredients(ingredients_data, recipe)
         return recipe
 
+    def to_representation(self, instance):
+        request = self.context.get("request")
+        context = {"request": request}
+        return RecipeGetSerializer(instance, context=context).data
+
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags", None)
         if tags is not None:
