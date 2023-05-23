@@ -15,6 +15,7 @@ from api.serializers import (
     BaseIngredientSerializer,
     CartSerializer,
     FavoriteSerializer,
+    RecipeSerializer,
     # RecipeGetSerializer,
     # RecipePostSerializer,
 )
@@ -27,6 +28,7 @@ CONTENT_TYPE = "text/plain"
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = AuthorAndTagFilter
