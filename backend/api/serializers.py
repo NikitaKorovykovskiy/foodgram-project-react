@@ -11,7 +11,7 @@ from recipes.models import (
     Favorite,
     IngredientInRecipe,
     Recipe,
-    TagRecipe,
+    # TagRecipe,
 )
 from tags.models import Tag
 from user.models import User
