@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import (
@@ -171,10 +172,28 @@ class RecipePostSerializer(serializers.ModelSerializer):
         self.add_ingredients(ingredients_data, recipe)
         return recipe
 
-    def to_representation(self, instance):
-        request = self.context.get("request")
-        context = {"request": request}
-        return RecipeGetSerializer(instance, context=context).data
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags", None)
+        if tags is not None:
+            instance.tags.set(tags)
+
+        ingredients = validated_data.pop("ingredients", None)
+        if ingredients is not None:
+            instance.ingredients.clear()
+
+            for ingredient in ingredients:
+                amount = ingredient["amount"]
+                ingredient = get_object_or_404(
+                    Ingredient, pk=ingredient["id"]
+                )
+
+                Recipe.objects.update_or_create(
+                    recipe=instance,
+                    ingredient=ingredient,
+                    defaults={"amount": amount},
+                )
+
+        return super().update(instance, validated_data)
 
     def validate(self, data):
         ingredients = self.initial_data.get("ingredients")
