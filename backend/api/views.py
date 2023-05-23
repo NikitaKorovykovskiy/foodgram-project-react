@@ -15,9 +15,8 @@ from api.serializers import (
     BaseIngredientSerializer,
     CartSerializer,
     FavoriteSerializer,
-    RecipeSerializer,
-    # RecipeGetSerializer,
-    # RecipePostSerializer,
+    RecipeGetSerializer,
+    RecipePostSerializer,
 )
 from ingredients.models import Ingredient
 from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
@@ -28,17 +27,16 @@ CONTENT_TYPE = "text/plain"
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    serializer_class = RecipeSerializer
     queryset = Recipe.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = AuthorAndTagFilter
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = LimitPageNumberPagination
 
-    # def get_serializer_class(self):
-    #     if self.request.method == "GET":
-    #         return RecipeGetSerializer
-    #     return RecipePostSerializer
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return RecipeGetSerializer
+        return RecipePostSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
