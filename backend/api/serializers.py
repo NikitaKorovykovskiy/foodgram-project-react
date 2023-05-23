@@ -11,7 +11,7 @@ from recipes.models import (
     Favorite,
     IngredientInRecipe,
     Recipe,
-    # TagRecipe,
+    TagRecipe,
 )
 from tags.models import Tag
 from user.models import User
@@ -150,13 +150,28 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
         lookup_field = "author"
 
-    def add_ingredients(self, instance, ingredients):
-        for ingredient in ingredients:
-            ing, _ = IngredientInRecipe.objects.get_or_create(
-                ingredient_id=ingredient["id"], amount=ingredient["amount"]
-            )
-            instance.ingredients.add(ing)
-        return instance
+    def create(self, validated_data):
+        tags = self.validate_tags(self.initial_data.get("tags"))
+        ingredients = self.validate_ingredients(
+            self.initial_data.get("ingredients")
+        )
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        return self.add_ingredients(recipe, ingredients)
+
+    # def create(self, validated_data):
+    #     tags_set = validated_data.pop("tags")
+    #     ingredients = validated_data.pop("ingredients")
+    #     recipe = Recipe.objects.create(**validated_data)
+    #     for tag in tags_set:
+    #         TagRecipe.objects.bulk_create(recipe=recipe, tag=tag)
+    #     for ingredient in ingredients:
+    #         IngredientInRecipe.objects.bulk_create(
+    #             ingredient=ingredient["id"],
+    #             recipe=recipe,
+    #             amount=ingredient["amount"],
+    #         )
+    #     return recipe
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
