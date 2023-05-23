@@ -162,35 +162,25 @@ class RecipePostSerializer(serializers.ModelSerializer):
             ]
         )
 
-    # def add_ingredients(self, ingredients_data, recipe):
-    #     for ingredient in ingredients_data:
-    #         IngredientInRecipe.objects.create(
-    #             recipe=recipe,
-    #             amount=ingredient["amount"],
-    #             ingredient=ingredient["id"],
-    #         )
+    def add_ingredients(self, ingredients_data, recipe):
+        for ingredient in ingredients_data:
+            IngredientInRecipe.objects.create(
+                recipe=recipe,
+                amount=ingredient["amount"],
+                ingredient=ingredient["id"],
+            )
 
-    # def add_tags(self, tags, recipe):
-    #     for tag in tags:
-    #         recipe.tags.add(tag)
+    def add_tags(self, tags, recipe):
+        for tag in tags:
+            recipe.tags.add(tag)
 
-    # def create(self, validated_data):
-    #     image_data = validated_data.pop("image")
-    #     ingredients_data = validated_data.pop("ingredients")
-    #     tag_data = validated_data.pop("tags")
-    #     recipe = Recipe.objects.create(image=image_data, **validated_data)
-    #     self.add_tags(tag_data, recipe)
-    #     self.add_ingredients(ingredients_data, recipe)
-    #     return recipe
-    @transaction.atomic
     def create(self, validated_data):
-        tags = validated_data.pop("tags")
-        ingredients = validated_data.pop("ingredients")
-        recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(tags)
-        self.create_ingredients_amounts(
-            recipe=recipe, ingredients=ingredients
-        )
+        image_data = validated_data.pop("image")
+        ingredients_data = validated_data.pop("ingredients")
+        tag_data = validated_data.pop("tags")
+        recipe = Recipe.objects.create(image=image_data, **validated_data)
+        self.add_tags(tag_data, recipe)
+        self.add_ingredients(ingredients_data, recipe)
         return recipe
 
     @transaction.atomic
