@@ -1,11 +1,4 @@
 from http import HTTPStatus
-from django.conf import settings
-from django.db.models import Sum
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django_filters import rest_framework as filters
-from rest_framework import permissions, status, viewsets
-from rest_framework.response import Response
 
 from api.filter import AuthorAndTagFilter, IngredientSearchFilter
 from api.paginators import LimitPageNumberPagination
@@ -17,8 +10,15 @@ from api.serializers import (
     RecipeGetSerializer,
     RecipePostSerializer,
 )
+from django.conf import settings
+from django.db.models import Sum
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django_filters import rest_framework as filters
 from ingredients.models import Ingredient
 from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
+from rest_framework import permissions, status, viewsets
+from rest_framework.response import Response
 from tags.models import Tag
 from tags.serializers import TagSerializer
 
