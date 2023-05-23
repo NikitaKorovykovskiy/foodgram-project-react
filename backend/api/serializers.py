@@ -150,14 +150,38 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
         lookup_field = "author"
 
+     def add_ingredients(self, ingredients_data, recipe):
+        for ingredient in ingredients_data:
+            IngredientInRecipe.objects.create(
+                recipe=recipe,
+                amount=ingredient['amount'],
+                ingredient=ingredient['id']
+            )
+
+    def add_tags(self, tags, recipe):
+        for tag in tags:
+            recipe.tags.add(tag)
+
     def create(self, validated_data):
-        tags = self.validate_tags(self.initial_data.get("tags"))
-        ingredients = self.validate_ingredients(
-            self.initial_data.get("ingredients")
-        )
-        recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(tags)
-        return self.add_ingredients(recipe, ingredients)
+        image_data = validated_data.pop("image")
+        ingredients_data = validated_data.pop("ingredients")
+        tag_data = validated_data.pop("tags")
+        recipe = Recipe.objects.create(image=image_data, **validated_data)
+        self.add_tags(tag_data, recipe)
+        self.add_ingredients(ingredients_data, recipe)
+        return recipe
+
+    def to_representation(self, instance):
+        request = self.context.get("request")
+        context = {"request": request}
+        return RecipeGetSerializer(instance, context=context).data
+
+    def update(self, instance, validated_data):
+        instance.tags.clear()
+        IngredientInRecipe.objects.filter(recipe=instance).delete()
+        self.add_tags(validated_data.pop("tags"), instance)
+        self.add_ingredients(validated_data.pop("ingredients"), instance)
+        return super().update(instance, validated_data)
 
     # def create(self, validated_data):
     #     tags_set = validated_data.pop("tags")
@@ -173,21 +197,21 @@ class RecipePostSerializer(serializers.ModelSerializer):
     #         )
     #     return recipe
 
-    def update(self, instance, validated_data):
-        instance = super().update(instance, validated_data)
-        instance.tags.clear()
-        tags_data = self.initial_data.get("tags")
-        instance.tags.set(tags_data)
-        IngredientInRecipe.objects.filter(recipe=instance).all().delete()
-        ingredients = validated_data.get("ingredients")
-        for ingredient in ingredients:
-            IngredientInRecipe.objects.bulk_create(
-                ingredient=ingredient["id"],
-                recipe=instance,
-                amount=ingredient["amount"],
-            )
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     instance = super().update(instance, validated_data)
+    #     instance.tags.clear()
+    #     tags_data = self.initial_data.get("tags")
+    #     instance.tags.set(tags_data)
+    #     IngredientInRecipe.objects.filter(recipe=instance).all().delete()
+    #     ingredients = validated_data.get("ingredients")
+    #     for ingredient in ingredients:
+    #         IngredientInRecipe.objects.bulk_create(
+    #             ingredient=ingredient["id"],
+    #             recipe=instance,
+    #             amount=ingredient["amount"],
+    #         )
+    #     instance.save()
+    #     return instance
 
     def validate(self, data):
         ingredients = self.initial_data.get("ingredients")
