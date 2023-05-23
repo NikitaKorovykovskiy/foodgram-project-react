@@ -150,12 +150,12 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
         lookup_field = "author"
 
-     def add_ingredients(self, ingredients_data, recipe):
+    def add_ingredients(self, ingredients_data, recipe):
         for ingredient in ingredients_data:
             IngredientInRecipe.objects.create(
                 recipe=recipe,
-                amount=ingredient['amount'],
-                ingredient=ingredient['id']
+                amount=ingredient["amount"],
+                ingredient=ingredient["id"],
             )
 
     def add_tags(self, tags, recipe):
