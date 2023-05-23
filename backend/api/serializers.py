@@ -148,7 +148,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             "text",
             "cooking_time",
         )
-        lookup_field = "author"
+        # lookup_field = "author"
 
     def add_ingredients(self, ingredients_data, recipe):
         for ingredient in ingredients_data:
@@ -171,10 +171,18 @@ class RecipePostSerializer(serializers.ModelSerializer):
         self.add_ingredients(ingredients_data, recipe)
         return recipe
 
-    def to_representation(self, instance):
-        request = self.context.get("request")
-        context = {"request": request}
-        return RecipeGetSerializer(instance, context=context).data
+    def update(self, instance, validated_data):
+        super().update(instance, validated_data)
+        tags = self.validate_tags(self.initial_data.get("tags"))
+        ingredients = self.validate_ingredients(
+            self.initial_data.get("ingredients")
+        )
+        instance.tags.clear()
+        instance.tags.set(tags)
+        instance.ingredients.clear()
+        instance = self.add_ingredients(instance, ingredients)
+        instance.save()
+        return instance
 
     # def update(self, instance, validated_data):
     #     super().update(instance, validated_data)
