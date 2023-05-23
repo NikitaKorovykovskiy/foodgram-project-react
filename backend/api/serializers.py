@@ -150,19 +150,13 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
         lookup_field = "author"
 
-    def create(self, validated_data):
-        tags_set = validated_data.pop("tags")
-        ingredients = validated_data.pop("ingredients")
-        recipe = Recipe.objects.create(**validated_data)
-        for tag in tags_set:
-            TagRecipe.objects.bulk_create(recipe=recipe, tag=tag)
+    def add_ingredients(self, instance, ingredients):
         for ingredient in ingredients:
-            IngredientInRecipe.objects.bulk_create(
-                ingredient=ingredient["id"],
-                recipe=recipe,
-                amount=ingredient["amount"],
+            ing, _ = IngredientInRecipe.objects.get_or_create(
+                ingredient_id=ingredient["id"], amount=ingredient["amount"]
             )
-        return recipe
+            instance.ingredients.add(ing)
+        return instance
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
