@@ -1,11 +1,11 @@
-from django.shortcuts import get_object_or_404
+# from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import (
     UniqueTogetherValidator,
     UniqueValidator,
 )
-
+from django.db import transaction
 from ingredients.models import Ingredient
 from recipes.models import (
     Cart,
@@ -151,54 +151,68 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
         # lookup_field = "author"
 
-    def add_ingredients(self, ingredients_data, recipe):
-        for ingredient in ingredients_data:
-            IngredientInRecipe.objects.create(
-                recipe=recipe,
-                amount=ingredient["amount"],
-                ingredient=ingredient["id"],
-            )
+    @transaction.atomic
+    def create_ingredients_amounts(self, ingredients, recipe):
+        IngredientInRecipe.objects.bulk_create(
+            [
+                IngredientInRecipe(
+                    ingredient=Ingredient.objects.get(id=ingredient["id"]),
+                    recipe=recipe,
+                    amount=ingredient["amount"],
+                )
+                for ingredient in ingredients
+            ]
+        )
 
-    def add_tags(self, tags, recipe):
-        for tag in tags:
-            recipe.tags.add(tag)
+    # def add_ingredients(self, ingredients_data, recipe):
+    #     for ingredient in ingredients_data:
+    #         IngredientInRecipe.objects.create(
+    #             recipe=recipe,
+    #             amount=ingredient["amount"],
+    #             ingredient=ingredient["id"],
+    #         )
 
+    # def add_tags(self, tags, recipe):
+    #     for tag in tags:
+    #         recipe.tags.add(tag)
+
+    # def create(self, validated_data):
+    #     image_data = validated_data.pop("image")
+    #     ingredients_data = validated_data.pop("ingredients")
+    #     tag_data = validated_data.pop("tags")
+    #     recipe = Recipe.objects.create(image=image_data, **validated_data)
+    #     self.add_tags(tag_data, recipe)
+    #     self.add_ingredients(ingredients_data, recipe)
+    #     return recipe
+    @transaction.atomic
     def create(self, validated_data):
-        image_data = validated_data.pop("image")
-        ingredients_data = validated_data.pop("ingredients")
-        tag_data = validated_data.pop("tags")
-        recipe = Recipe.objects.create(image=image_data, **validated_data)
-        self.add_tags(tag_data, recipe)
-        self.add_ingredients(ingredients_data, recipe)
+        tags = validated_data.pop("tags")
+        ingredients = validated_data.pop("ingredients")
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        self.create_ingredients_amounts(
+            recipe=recipe, ingredients=ingredients
+        )
         return recipe
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags")
+        ingredients = validated_data.pop("ingredients")
+        instance = super().update(instance, validated_data)
+        instance.tags.clear()
+        instance.tags.set(tags)
+        instance.ingredients.clear()
+        self.create_ingredients_amounts(
+            recipe=instance, ingredients=ingredients
+        )
+        instance.save()
+        return instance
 
     def to_representation(self, instance):
         request = self.context.get("request")
         context = {"request": request}
         return RecipeGetSerializer(instance, context=context).data
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop("tags", None)
-        if tags is not None:
-            instance.tags.set(tags)
-
-        ingredients = validated_data.pop("ingredients", None)
-        if ingredients is not None:
-            instance.ingredients.clear()
-
-            for ingredient in ingredients:
-                amount = ingredient["amount"]
-                ingredient = get_object_or_404(
-                    Ingredient, pk=ingredient["id"]
-                )
-
-                IngredientInRecipe.objects.update_or_create(
-                    recipe=instance,
-                    ingredient=ingredient,
-                    defaults={"amount": amount},
-                )
-
-        return super().update(instance, validated_data)
 
     def validate(self, data):
         ingredients = self.initial_data.get("ingredients")
