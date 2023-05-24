@@ -6,7 +6,7 @@ from .views import SubscribeUserViewSet
 app_name = "user"
 
 router = DefaultRouter()
-router.register("users", SubscribeUserViewSet, basename="users")
+router.register(r"users", SubscribeUserViewSet, basename="users")
 
 urlpatterns = [
     path("", include(router.urls)),
