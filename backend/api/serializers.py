@@ -1,11 +1,10 @@
+from base64 import b64decode
+
+from django.core.files.base import ContentFile
 from drf_extra_fields.fields import Base64ImageField
 from ingredients.models import Ingredient
-from recipes.models import (
-    Cart,
-    Favorite,
-    IngredientInRecipe,  # TagRecipe,
-    Recipe,
-)
+from recipes.models import IngredientInRecipe  # TagRecipe,
+from recipes.models import Cart, Favorite, Recipe
 from rest_framework import serializers
 from rest_framework.validators import (
     UniqueTogetherValidator,
@@ -13,6 +12,23 @@ from rest_framework.validators import (
 )
 from tags.models import Tag
 from user.models import User
+
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith("data:image"):
+            format, imgstr = data.split(";base64,")
+            ext = format.split("/")[-1]
+            data = ContentFile(b64decode(imgstr), name="temp." + ext)
+        return super().to_internal_value(data)
+
+
+class ShortRecipeSerializer(ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = ("id", "name", "image", "cooking_time")
 
 
 class TagSerializer(serializers.ModelSerializer):
