@@ -169,5 +169,8 @@ class SubscribeShowSerializer(UserShowSerializer):
             self.context.get("request").query_params.get("recipes_limit")
             or settings.LIMITRECIPE
         )
+        recipes = data.recipes.all()
         recipes = recipes[: int(limit)]
-        return ShortRecipeSerializer(recipes, many=True).data
+        return ShortRecipeSerializer(
+            recipes, many=True, read_only=True
+        ).data
