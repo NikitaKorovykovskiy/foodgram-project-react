@@ -42,7 +42,6 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(
         Tag,
-        through="TagRecipe",
         verbose_name="Теги",
         help_text="Выберите теги",
     )
@@ -56,43 +55,49 @@ class Recipe(models.Model):
         return self.name
 
 
-class RecipeRelated(models.Model):
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name="Рецепт",
-        help_text="Выберите рецепт",
-    )
+# class RecipeRelated(models.Model):
+#     recipe = models.ForeignKey(
+#         Recipe,
+#         on_delete=models.CASCADE,
+#         verbose_name="Рецепт",
+#         help_text="Выберите рецепт",
+#     )
 
-    class Meta:
-        abstract = True
-
-
-class TagRecipe(RecipeRelated):
-    tag = models.ForeignKey(
-        Tag,
-        on_delete=models.CASCADE,
-        verbose_name="Тег",
-        help_text="Выберите из списка тег",
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                name="unique_recipe_tag",
-                fields=["recipe", "tag"],
-            ),
-        ]
-        verbose_name = "Тег рецепта"
-        verbose_name_plural = "Теги рецептов"
+#     class Meta:
+#         abstract = True
 
 
-class IngredientInRecipe(RecipeRelated):
+# class TagRecipe(RecipeRelated):
+#     tag = models.ForeignKey(
+#         Tag,
+#         on_delete=models.CASCADE,
+#         verbose_name="Тег",
+#         help_text="Выберите из списка тег",
+#     )
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(
+#                 name="unique_recipe_tag",
+#                 fields=["recipe", "tag"],
+#             ),
+#         ]
+#         verbose_name = "Тег рецепта"
+#         verbose_name_plural = "Теги рецептов"
+
+
+class IngredientInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        verbose_name="Ингредиент рецепта",
-        help_text="Выберите ингредиент рецепта",
+        related_name="recipe_ingredient",
+        verbose_name="Ингридиент",
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name="recipe_ingredient",
+        verbose_name="Рецепт",
     )
     amount = models.PositiveSmallIntegerField(
         "Количество ингридиента",
@@ -110,6 +115,32 @@ class IngredientInRecipe(RecipeRelated):
 
     def __str__(self) -> str:
         return f"{self.ingredient} {self.recipe} {self.amount}"
+
+
+# class IngredientInRecipe(RecipeRelated):
+#     ingredient = models.ForeignKey(
+#         Ingredient,
+#         on_delete=models.CASCADE,
+#         verbose_name="Ингредиент рецепта",
+#         related_name='recipe_ingredient',
+#         help_text="Выберите ингредиент рецепта",
+#     )
+#     amount = models.PositiveSmallIntegerField(
+#         "Количество ингридиента",
+#         help_text="Введите количество ингридиента",
+#         validators=[
+#             MinValueValidator(
+#                 1, message="Укажите количество больше либо равное 1"
+#             ),
+#         ],
+#     )
+
+#     class Meta:
+#         verbose_name = "Ингредиент рецепта"
+#         verbose_name_plural = "Ингредиенты рецептов"
+
+#     def __str__(self) -> str:
+#         return f"{self.ingredient} {self.recipe} {self.amount}"
 
 
 class Favorite(models.Model):

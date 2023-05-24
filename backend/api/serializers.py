@@ -6,15 +6,13 @@ from recipes.models import (
     Favorite,
     IngredientInRecipe,
     Recipe,
-    TagRecipe,
+    # TagRecipe,
 )
 from rest_framework import serializers
 from rest_framework.validators import (
     UniqueTogetherValidator,
     UniqueValidator,
 )
-from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
 from tags.models import Tag
 from user.models import User
 
@@ -173,8 +171,8 @@ class RecipePostSerializer(serializers.ModelSerializer):
         tags_set = validated_data.pop("tags")
         ingredients = validated_data.pop("ingredients")
         recipe = Recipe.objects.create(**validated_data)
-        TagRecipe.objects.bulk_create(
-            TagRecipe(recipe=recipe, tag=tag) for tag in tags_set
+        Tag.objects.bulk_create(
+            Tag(recipe=recipe, tag=tag) for tag in tags_set
         )
         IngredientInRecipe.objects.bulk_create(
             IngredientInRecipe(
@@ -205,25 +203,28 @@ class RecipePostSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def validate_ingredients(self, value):
-        ingredients = value
+    def validate(self, data):
+        ingredients = self.initial_data.get("ingredients")
         if not ingredients:
-            raise ValidationError(
-                {"ingredients": "Нужен хотя бы один ингредиент!"}
+            raise serializers.ValidationError(
+                {"ingredients": "Нужен хоть один ингридиент для рецепта"}
             )
-        ingredients_list = []
-        for item in ingredients:
-            ingredient = get_object_or_404(Ingredient, id=item["id"])
-            if ingredient in ingredients_list:
-                raise ValidationError(
-                    {"ingredients": "Такой ингредиент уже есть!"}
+        ids = [item["id"] for item in ingredients]
+        if len(ids) != len(set(ids)):
+            raise serializers.ValidationError(
+                "Ингредиенты в рецепте должны быть уникальными!"
+            )
+        for ingredient_item in ingredients:
+            if int(ingredient_item["amount"]) < 1:
+                raise serializers.ValidationError(
+                    {
+                        "ingredients": (
+                            "Убедитесь, что значение количества "
+                            "ингредиента больше 1"
+                        )
+                    }
                 )
-            if int(item["amount"]) <= 0:
-                raise ValidationError(
-                    {"amount": "Количество должно быть больше 0!"}
-                )
-            ingredients_list.append(ingredient)
-        return value
+        return data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
