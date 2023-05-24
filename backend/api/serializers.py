@@ -12,6 +12,18 @@ from tags.models import Tag
 from django.db import transaction
 from user.models import User
 
+class RecipeShortSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
 
 class TagSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(

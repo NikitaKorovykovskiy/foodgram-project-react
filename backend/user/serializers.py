@@ -1,8 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers
 
-# from api.serializers import RecipeGetSerializer
-from api.serializers import ShortRecipeSerializer
+from api.serializers import RecipeGetSerializer
 from user.models import Subscribe, User
 
 
@@ -169,8 +168,5 @@ class SubscribeShowSerializer(UserShowSerializer):
             self.context.get("request").query_params.get("recipes_limit")
             or settings.LIMITRECIPE
         )
-        recipes = data.recipes.all()
-        recipes = recipes[: int(limit)]
-        return ShortRecipeSerializer(
-            recipes, many=True, read_only=True
-        ).data
+        recipes = data.following.recipes.all()[: int(limit)]
+        return RecipeGetSerializer(recipes, many=True).data
