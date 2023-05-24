@@ -48,18 +48,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
     #     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
+        # partial = kwargs.get("partial", None)
+        # instance = self.get_object()
+        # serializer = self.get_serializer(
+        #     instance, data=request.data, partial=partial
+        # )
+        # serializer.is_valid(raise_exception=True)
+        # self.perform_update(serializer)
+        # serializer = RecipePostSerializer(instance=serializer.instance)
+        # headers = self.get_success_headers(serializer.data)
+        # return Response(
+        #     serializer.data, status=status.HTTP_200_OK, headers=headers
+        # )
+        pk = kwargs.get("pk", None)
+        instance = Recipe.objects.get(pk=pk)
+        serializer = RecipePostSerializer(
+            data=request.data, instance=instance
         )
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        serializer = RecipePostSerializer(instance=serializer.instance)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_200_OK, headers=headers
-        )
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
