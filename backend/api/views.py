@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from api.filter import AuthorAndTagFilter, IngredientSearchFilter
+from api.filter import IngredientSearchFilter  # AuthorAndTagFilter
 from api.paginators import LimitPageNumberPagination
 from api.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from api.serializers import (
