@@ -120,6 +120,14 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             "is_in_shopping_cart",
         )
 
+    def add_ingredients(self, instance, ingredients):
+        for ingredient in ingredients:
+            ing, _ = IngredientInRecipe.objects.get_or_create(
+                ingredient_id=ingredient["id"], amount=ingredient["amount"]
+            )
+            instance.ingredients.add(ing)
+        return instance
+
     def get_is_favorited(self, obj):
         request = self.context.get("request")
         if request is None or request.user.is_anonymous:
