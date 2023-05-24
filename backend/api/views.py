@@ -7,8 +7,8 @@ from api.serializers import (
     BaseIngredientSerializer,
     CartSerializer,
     FavoriteSerializer,
-    RecipeGetSerializer,
-    RecipePostSerializer,
+    # RecipeGetSerializer,
+    # RecipePostSerializer,
     RecipeShortSerializer,
 )
 from django.conf import settings
@@ -19,11 +19,12 @@ from django_filters import rest_framework as filters
 from ingredients.models import Ingredient
 from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
 from rest_framework import permissions, status, viewsets
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from tags.models import Tag
 from tags.serializers import TagSerializer
+from rest_framework.decorators import action
 
 CONTENT_TYPE = "text/plain"
 
@@ -77,20 +78,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @action(detail=False, permission_classes=[IsAuthenticated])
-    def download_shopping_cart(self, request):
-        user = request.user
-        if not user.shopping_cart.exists():
-            return Response(status=HTTP_400_BAD_REQUEST)
+    # @action(detail=False, permission_classes=[IsAuthenticated])
+    # def download_shopping_cart(self, request):
+    #     user = request.user
+    #     if not user.shopping_cart.exists():
+    #         return Response(status=HTTP_400_BAD_REQUEST)
 
-        ingredients = (
-            IngredientInRecipe.objects.filter(
-                recipe__shopping_cart__user=request.user
-            )
-            .values("ingredient__name", "ingredient__measurement_unit")
-            .annotate(amount=Sum("amount"))
-        )
-        return ingredients_export(self, request, ingredients)
+    #     ingredients = (
+    #         IngredientInRecipe.objects.filter(
+    #             recipe__shopping_cart__user=request.user
+    #         )
+    #         .values("ingredient__name", "ingredient__measurement_unit")
+    #         .annotate(amount=Sum("amount"))
+    #     )
+    #     return ingredients_export(self, request, ingredients)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

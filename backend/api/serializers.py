@@ -5,7 +5,10 @@ from recipes.models import IngredientInRecipe  # TagRecipe,
 from recipes.models import Cart, Favorite, Recipe
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import (
+    UniqueTogetherValidator,
+    UniqueValidator,
+)
 from tags.models import Tag
 from user.models import User
 
@@ -13,15 +16,10 @@ from user.models import User
 class RecipeShortSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
 
-
     class Meta:
         model = Recipe
-        fields = (
-            'id',
-            'name',
-            'image',
-            'cooking_time'
-        )
+        fields = ("id", "name", "image", "cooking_time")
+
 
 class TagSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(
@@ -117,29 +115,28 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             "is_in_shopping_cart",
         )
 
-     def get_ingredients(self, obj):
+    def get_ingredients(self, obj):
         recipe = obj
         ingredients = recipe.ingredients.values(
-            'id',
-            'name',
-            'measurement_unit',
-            amount=F('ingredientinrecipe__amount')
+            "id",
+            "name",
+            "measurement_unit",
+            amount=F("ingredientinrecipe__amount"),
         )
         return ingredients
 
-
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_anonymous:
             return False
         return user.favorites.filter(recipe=obj).exists()
 
-
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
+        user = self.context.get("request").user
         if user.is_anonymous:
             return False
         return user.shopping_cart.filter(recipe=obj).exists()
+
     # def get_is_favorited(self, obj):
     #     request = self.context.get("request")
     #     if request is None or request.user.is_anonymous:
