@@ -1,6 +1,3 @@
-from base64 import b64decode
-
-from django.core.files.base import ContentFile
 from drf_extra_fields.fields import Base64ImageField
 from ingredients.models import Ingredient
 from recipes.models import IngredientInRecipe  # TagRecipe,
@@ -10,25 +7,10 @@ from rest_framework.validators import (
     UniqueTogetherValidator,
     UniqueValidator,
 )
+from rest_framework.fields import SerializerMethodField
 from tags.models import Tag
+from django.db import transaction
 from user.models import User
-
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith("data:image"):
-            format, imgstr = data.split(";base64,")
-            ext = format.split("/")[-1]
-            data = ContentFile(b64decode(imgstr), name="temp." + ext)
-        return super().to_internal_value(data)
-
-
-class ShortRecipeSerializer(serializers.ModelSerializer):
-    image = Base64ImageField()
-
-    class Meta:
-        model = Recipe
-        fields = ("id", "name", "image", "cooking_time")
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -104,10 +86,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 class RecipeGetSerializer(serializers.ModelSerializer):
     author = UserDetailSerializer(read_only=True)
+    image = Base64ImageField()
     tags = TagSerializer(read_only=True, many=True)
-    ingredients = IngredientAmountGetSerializer(
-        read_only=True, many=True, source="recipe_ingredients"
-    )
+    ingredients = SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -126,21 +107,44 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             "is_in_shopping_cart",
         )
 
+     def get_ingredients(self, obj):
+        recipe = obj
+        ingredients = recipe.ingredients.values(
+            'id',
+            'name',
+            'measurement_unit',
+            amount=F('ingredientinrecipe__amount')
+        )
+        return ingredients
+
+
     def get_is_favorited(self, obj):
-        request = self.context.get("request")
-        if request is None or request.user.is_anonymous:
+        user = self.context.get('request').user
+        if user.is_anonymous:
             return False
-        return Favorite.objects.filter(
-            user=request.user, recipe__id=obj.id
-        ).exists()
+        return user.favorites.filter(recipe=obj).exists()
+
 
     def get_is_in_shopping_cart(self, obj):
-        request = self.context.get("request")
-        if request is None or request.user.is_anonymous:
+        user = self.context.get('request').user
+        if user.is_anonymous:
             return False
-        return Cart.objects.filter(
-            user=request.user, recipe__id=obj.id
-        ).exists()
+        return user.shopping_cart.filter(recipe=obj).exists()
+    # def get_is_favorited(self, obj):
+    #     request = self.context.get("request")
+    #     if request is None or request.user.is_anonymous:
+    #         return False
+    #     return Favorite.objects.filter(
+    #         user=request.user, recipe__id=obj.id
+    #     ).exists()
+
+    # def get_is_in_shopping_cart(self, obj):
+    #     request = self.context.get("request")
+    #     if request is None or request.user.is_anonymous:
+    #         return False
+    #     return Cart.objects.filter(
+    #         user=request.user, recipe__id=obj.id
+    #     ).exists()
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
@@ -164,49 +168,41 @@ class RecipePostSerializer(serializers.ModelSerializer):
         )
         # lookup_field = "author"
 
-    def add_ingredients(self, ingredients_data, recipe):
-        for ingredient in ingredients_data:
-            IngredientInRecipe.objects.create(
-                recipe=recipe,
-                amount=ingredient["amount"],
-                ingredient=ingredient["id"],
-            )
+    @transaction.atomic
+    def create_ingredients_amounts(self, ingredients, recipe):
+        IngredientInRecipe.objects.bulk_create(
+            [
+                IngredientInRecipe(
+                    ingredient=Ingredient.objects.get(id=ingredient["id"]),
+                    recipe=recipe,
+                    amount=ingredient["amount"],
+                )
+                for ingredient in ingredients
+            ]
+        )
 
-    def add_tags(self, tags, recipe):
-        for tag in tags:
-            recipe.tags.add(tag)
-
+    @transaction.atomic
     def create(self, validated_data):
-        image_data = validated_data.pop("image")
-        ingredients_data = validated_data.pop("ingredients")
-        tag_data = validated_data.pop("tags")
-        recipe = Recipe.objects.create(image=image_data, **validated_data)
-        self.add_tags(tag_data, recipe)
-        self.add_ingredients(ingredients_data, recipe)
+        tags = validated_data.pop("tags")
+        ingredients = validated_data.pop("ingredients")
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        self.create_ingredients_amounts(
+            recipe=recipe, ingredients=ingredients
+        )
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
-        instance.image = validated_data.get("image", instance.image)
-        instance.name = validated_data.get("name", instance.name)
-        instance.text = validated_data.get("text", instance.text)
-        instance.cooking_time = validated_data.get(
-            "cooking_time", instance.cooking_time
-        )
+        tags = validated_data.pop("tags")
+        ingredients = validated_data.pop("ingredients")
+        instance = super().update(instance, validated_data)
         instance.tags.clear()
-        tags_data = self.initial_data.get("tags")
-        instance.tags.set(tags_data)
-        IngredientInRecipe.objects.filter(recipe=instance).all().delete()
-        ingredients = validated_data.get("ingredients")
-        # instance.tags.clear()
-        # instance.tags.set(tags)
-        # instance.ingredients.clear()
-        for ingredient in ingredients:
-            IngredientInRecipe.objects.create(
-                ingredient=ingredient["id"],
-                recipe=instance,
-                amount=ingredient["amount"],
-            )
-        instance.save()
+        instance.tags.set(tags)
+        instance.ingredients.clear()
+        self.create_ingredients_amounts(
+            recipe=instance, ingredients=ingredients
+        )
         return instance
 
     def to_representation(self, instance):
