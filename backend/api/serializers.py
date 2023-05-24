@@ -9,6 +9,7 @@ from rest_framework.validators import (
     UniqueTogetherValidator,
     UniqueValidator,
 )
+from django.db.models import F
 from tags.models import Tag
 from user.models import User
 

@@ -21,7 +21,8 @@ from recipes.models import Cart, Favorite, IngredientInRecipe, Recipe
 from rest_framework import permissions, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
+
+# from rest_framework.status import HTTP_400_BAD_REQUEST
 from tags.models import Tag
 from tags.serializers import TagSerializer
 from rest_framework.decorators import action
