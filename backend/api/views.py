@@ -3,9 +3,14 @@ from http import HTTPStatus
 from api.filter import AuthorAndTagFilter, IngredientSearchFilter
 from api.paginators import LimitPageNumberPagination
 from api.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
-from api.serializers import (BaseIngredientSerializer, CartSerializer,
-                             FavoriteSerializer, RecipeGetSerializer,
-                             RecipePostSerializer, RecipeShortSerializer)
+from api.serializers import (
+    BaseIngredientSerializer,
+    CartSerializer,
+    FavoriteSerializer,
+    RecipeGetSerializer,
+    RecipePostSerializer,
+    RecipeShortSerializer,
+)
 from django.conf import settings
 from django.db.models import Sum
 from django.http import HttpResponse
@@ -31,39 +36,36 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = LimitPageNumberPagination
 
-     @action(
+    @action(
         detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
+        methods=["post", "delete"],
+        permission_classes=[IsAuthenticated],
     )
     def favorite(self, request, pk):
-        if request.method == 'POST':
+        if request.method == "POST":
             return self.__add_to(Favorite, request.user, pk)
         return self.__delete_from(Favorite, request.user, pk)
 
-
     @action(
         detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
+        methods=["post", "delete"],
+        permission_classes=[IsAuthenticated],
     )
     def shopping_cart(self, request, pk):
-        if request.method == 'POST':
+        if request.method == "POST":
             return self.__add_to(Cart, request.user, pk)
         return self.__delete_from(Cart, request.user, pk)
-
 
     def __add_to(self, model, user, pk):
         if model.objects.filter(user=user, recipe__id=pk).exists():
             return Response(
-                {'errors': 'Рецепт уже добавлен!'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"errors": "Рецепт уже добавлен!"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         recipe = get_object_or_404(Recipe, id=pk)
         model.objects.create(user=user, recipe=recipe)
         serializer = RecipeShortSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
     def __delete_from(self, model, user, pk):
         obj = model.objects.filter(user=user, recipe__id=pk)
@@ -71,27 +73,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
             obj.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
-            {'errors': 'Рецепт уже удален!'},
-            status=status.HTTP_400_BAD_REQUEST
+            {"errors": "Рецепт уже удален!"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
-
-    @action(
-        detail=False,
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         user = request.user
         if not user.shopping_cart.exists():
             return Response(status=HTTP_400_BAD_REQUEST)
 
-
-        ingredients = IngredientInRecipe.objects.filter(
-            recipe__shopping_cart__user=request.user
-        ).values(
-            'ingredient__name',
-            'ingredient__measurement_unit'
-        ).annotate(amount=Sum('amount'))
+        ingredients = (
+            IngredientInRecipe.objects.filter(
+                recipe__shopping_cart__user=request.user
+            )
+            .values("ingredient__name", "ingredient__measurement_unit")
+            .annotate(amount=Sum("amount"))
+        )
         return ingredients_export(self, request, ingredients)
 
 
