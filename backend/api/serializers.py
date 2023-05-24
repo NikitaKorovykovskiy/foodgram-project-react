@@ -1,16 +1,14 @@
+from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
 from ingredients.models import Ingredient
 from recipes.models import IngredientInRecipe  # TagRecipe,
 from recipes.models import Cart, Favorite, Recipe
 from rest_framework import serializers
-from rest_framework.validators import (
-    UniqueTogetherValidator,
-    UniqueValidator,
-)
 from rest_framework.fields import SerializerMethodField
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from tags.models import Tag
-from django.db import transaction
 from user.models import User
+
 
 class RecipeShortSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
