@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from api.filter import IngredientSearchFilter  # AuthorAndTagFilter
+from api.filter import AuthorAndTagFilter, IngredientSearchFilter
 from api.paginators import LimitPageNumberPagination
 from api.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
 from api.serializers import (
@@ -28,8 +28,8 @@ CONTENT_TYPE = "text/plain"
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
-    # filterset_class = AuthorAndTagFilter
-    filterset_fields = ["created"]
+    filterset_class = AuthorAndTagFilter
+    # filterset_fields = ['created']
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = LimitPageNumberPagination
 

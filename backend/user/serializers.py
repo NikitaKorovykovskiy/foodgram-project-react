@@ -1,4 +1,4 @@
-# from django.conf import settings
+from django.conf import settings
 from rest_framework import serializers
 
 from api.serializers import RecipeGetSerializer
@@ -164,18 +164,9 @@ class SubscribeShowSerializer(UserShowSerializer):
 
     def get_recipes(self, data):
         """Получаем рецепты пользователя."""
-        # limit = (
-        #     self.context.get("request").query_params.get("recipes_limit")
-        #     or settings.LIMITRECIPE
-        # )
-        # recipes = data.following.recipes.all()[:int(limit)]
-        # return RecipeGetSerializer(recipes, many=True).data
-        request = self.context.get("request")
-        recipes_limit = request.GET.get("recipes_limit")
-        recipes = data.recipes.all()
-        if recipes_limit:
-            recipes = recipes[: int(recipes_limit)]
-        serializer = RecipeGetSerializer(
-            recipes, many=True, read_only=True
+        limit = (
+            self.context.get("request").query_params.get("recipes_limit")
+            or settings.LIMITRECIPE
         )
-        return serializer.data
+        recipes = data.following.recipes.all()[: int(limit)]
+        return RecipeGetSerializer(recipes, many=True).data
