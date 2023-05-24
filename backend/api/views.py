@@ -28,7 +28,7 @@ CONTENT_TYPE = "text/plain"
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_class = AuthorAndTagFilter
+    # filterset_class = AuthorAndTagFilter
     filterset_fields = ["created"]
     permission_classes = (IsOwnerOrReadOnly,)
     pagination_class = LimitPageNumberPagination
