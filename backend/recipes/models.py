@@ -19,40 +19,33 @@ class Recipe(models.Model):
         auto_now_add=True,
         help_text="Автоматически устанавливается текущая дата и время",
     )
-
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name="Автор",
         help_text="Выберите из списка автора",
     )
-
     name = models.CharField(
         "Название", max_length=120, help_text="Введите название"
     )
-
     image = models.ImageField(
         "Картинка",
         upload_to="recipes/",
         help_text="Выберите картинку",
     )
-
     text = models.TextField(
         "Текстовое описание", help_text="Введите текстовое описание"
     )
-
     cooking_time = models.PositiveSmallIntegerField(
         "Время приготовления в минутах",
         help_text="Введите время приготовления в минутах",
     )
-
     ingredients = models.ManyToManyField(
         Ingredient,
         through="IngredientInRecipe",
         verbose_name="Ингредиенты",
         help_text="Выберите ингредиенты",
     )
-
     tags = models.ManyToManyField(
         Tag,
         through="TagRecipe",
@@ -62,33 +55,25 @@ class Recipe(models.Model):
 
     class Meta:
         verbose_name = "Рецепт"
-
         verbose_name_plural = "Рецепты"
-
         ordering = ("name",)
 
     def __str__(self):
         return self.name
 
 
-class RecipeRelated(models.Model):
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name="Рецепт",
-        help_text="Выберите рецепт",
-    )
-
-    class Meta:
-        abstract = True
-
-
-class TagRecipe(RecipeRelated):
+class TagRecipe(models.Model):
     tag = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
         verbose_name="Тег",
         help_text="Выберите из списка тег",
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name="Рецепт",
+        help_text="Выберите рецепт",
     )
 
     class Meta:
@@ -104,14 +89,19 @@ class TagRecipe(RecipeRelated):
         verbose_name_plural = "Теги рецептов"
 
 
-class IngredientInRecipe(RecipeRelated):
+class IngredientInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name="Ингредиент рецепта",
         help_text="Выберите ингредиент рецепта",
     )
-
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name="Рецепт",
+        help_text="Выберите рецепт",
+    )
     amount = models.PositiveSmallIntegerField(
         "Количество ингридиента",
         help_text="Введите количество ингридиента",
