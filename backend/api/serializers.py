@@ -1,9 +1,18 @@
+from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
+
 from ingredients.models import Ingredient
-from recipes.models import (Cart, Favorite, IngredientInRecipe, Recipe,
-                            TagRecipe)
+from recipes.models import (
+    Cart,
+    Favorite,
+    IngredientInRecipe,  # TagRecipe,
+    Recipe,
+)
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import (
+    UniqueTogetherValidator,
+    UniqueValidator,
+)
 from tags.models import Tag
 from user.models import User
 
@@ -16,29 +25,23 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-
         fields = ("id", "name", "color", "slug")
-
         lookup_field = "slug"
 
 
 class BaseIngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
-
         fields = ("id", "name", "measurement_unit")
 
 
 class IngredientAmountGetSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-
     name = serializers.SerializerMethodField()
-
     measurement_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = IngredientInRecipe
-
         fields = ("id", "name", "measurement_unit", "amount")
 
     def get_id(self, obj):
@@ -58,7 +61,6 @@ class IngredientAmountPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IngredientInRecipe
-
         fields = ("id", "amount")
 
 
@@ -90,15 +92,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 class RecipeGetSerializer(serializers.ModelSerializer):
     author = UserDetailSerializer(read_only=True)
-
     tags = TagSerializer(read_only=True, many=True)
-
     ingredients = IngredientAmountGetSerializer(
         read_only=True, many=True, source="recipe_ingredients"
     )
-
     is_favorited = serializers.SerializerMethodField()
-
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
@@ -140,13 +138,10 @@ class RecipeGetSerializer(serializers.ModelSerializer):
 
 class RecipePostSerializer(serializers.ModelSerializer):
     author = UserDetailSerializer(read_only=True)
-
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
-
     ingredients = IngredientAmountPostSerializer(many=True)
-
     image = Base64ImageField()
 
     class Meta:
@@ -164,48 +159,74 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
         lookup_field = "author"
 
-    def create(self, validated_data):
-        tags_set = validated_data.pop("tags")
+    @transaction.atomic
+    def create_ingredients_amounts(self, ingredients, recipe):
+        IngredientInRecipe.objects.bulk_create(
+            [
+                IngredientInRecipe(
+                    ingredient=Ingredient.objects.get(id=ingredient["id"]),
+                    recipe=recipe,
+                    amount=ingredient["amount"],
+                )
+                for ingredient in ingredients
+            ]
+        )
 
-        ingredients = validated_data.pop("ingredients")
-
-        recipe = Recipe.objects.create(**validated_data)
-
-        for tag in tags_set:
-            TagRecipe.objects.bulk_create(recipe=recipe, tag=tag)
-
-        for ingredient in ingredients:
-            IngredientInRecipe.objects.bulk_create(
-                ingredient=ingredient["id"],
+    def add_ingredients(self, ingredients_data, recipe):
+        for ingredient in ingredients_data:
+            IngredientInRecipe.objects.create(
                 recipe=recipe,
                 amount=ingredient["amount"],
+                ingredient=ingredient["id"],
             )
+
+    def add_tags(self, tags, recipe):
+        for tag in tags:
+            recipe.tags.add(tag)
+
+    def create(self, validated_data):
+        image_data = validated_data.pop("image")
+
+        ingredients_data = validated_data.pop("ingredients")
+
+        tag_data = validated_data.pop("tags")
+
+        recipe = Recipe.objects.create(image=image_data, **validated_data)
+
+        self.add_tags(tag_data, recipe)
+
+        self.add_ingredients(ingredients_data, recipe)
 
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
+        tags = validated_data.pop("tags")
+
+        ingredients = validated_data.pop("ingredients")
+
         instance = super().update(instance, validated_data)
 
         instance.tags.clear()
 
-        tags_data = self.initial_data.get("tags")
+        instance.tags.set(tags)
 
-        instance.tags.set(tags_data)
+        instance.ingredients.clear()
 
-        IngredientInRecipe.objects.filter(recipe=instance).all().delete()
-
-        ingredients = validated_data.get("ingredients")
-
-        for ingredient in ingredients:
-            IngredientInRecipe.objects.bulk_create(
-                ingredient=ingredient["id"],
-                recipe=instance,
-                amount=ingredient["amount"],
-            )
+        self.create_ingredients_amounts(
+            recipe=instance, ingredients=ingredients
+        )
 
         instance.save()
 
         return instance
+
+    def to_representation(self, instance):
+        request = self.context.get("request")
+
+        context = {"request": request}
+
+        return RecipeGetSerializer(instance, context=context).data
 
     def validate(self, data):
         ingredients = self.initial_data.get("ingredients")
@@ -228,7 +249,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
                     {
                         "ingredients": (
                             "Убедитесь, что значение количества "
-                            "ингредиента больше 0"
+                            "ингредиента больше 1"
                         )
                     }
                 )
