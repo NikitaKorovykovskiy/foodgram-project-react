@@ -32,7 +32,7 @@ CONTENT_TYPE = "text/plain"
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.all().filter("create")
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = AuthorAndTagFilter
     permission_classes = (IsOwnerOrReadOnly,)
