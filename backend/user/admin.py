@@ -1,14 +1,17 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from user.models import Subscribe, User
+from django.contrib.auth.admin import UserAdmin as UltraAdmin
+
+from .models import Subscribe, User
 
 
-class UserADmin(UserAdmin):
-    list_display = ("id", "username", "first_name", "email")
+@admin.register(User)
+class UserAdmin(UltraAdmin):
+    list_display = ("id", "username", "first_name", "last_name", "email")
     list_filter = ("first_name", "email")
 
 
-class SubscribeADmin(admin.ModelAdmin):
+@admin.register(Subscribe)
+class SubscribeAdmin(admin.ModelAdmin):
     list_display = (
         "user",
         "following",
@@ -17,7 +20,3 @@ class SubscribeADmin(admin.ModelAdmin):
         "following__email",
         "following__username",
     )
-
-
-admin.site.register(User, UserADmin)
-admin.site.register(Subscribe, SubscribeADmin)

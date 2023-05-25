@@ -1,6 +1,5 @@
 from rest_framework import serializers as serializers
 
-
 from .models import Recipe
 
 

@@ -1,22 +1,20 @@
 from django.contrib import admin
 
-
 from recipes.models import (
     Cart,
     Favorite,
     Ingredient,
-    IngredientInRecipe,
+    IngredientMount,
     Recipe,
+    Tag,
 )
 
 
-EMPTY = "< Тут Пусто >"
-
-
 class IngredientInLine(admin.TabularInline):
-    model = IngredientInRecipe
+    model = IngredientMount
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ("author", "name", "cooking_time")
     search_fields = ("name", "author__username", "author__email")
@@ -24,6 +22,7 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = [IngredientInLine]
 
 
+@admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ("user", "recipe")
     search_fields = (
@@ -34,7 +33,8 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_filter = ("recipe__tags",)
 
 
-class CartAdmin(admin.ModelAdmin):
+@admin.register(Cart)
+class ShoppingListAdmin(admin.ModelAdmin):
     list_display = ("user", "recipe")
     search_fields = (
         "recipe__name",
@@ -44,14 +44,13 @@ class CartAdmin(admin.ModelAdmin):
     list_filter = ("recipe__tags",)
 
 
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("pk", "name", "color")
+
+
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ("name", "measurement_unit")
     search_fields = ("name",)
     list_filter = ("measurement_unit",)
-    inlines = [IngredientInLine]
-
-
-admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(Ingredient, IngredientAdmin)
-admin.site.register(Favorite, FavoriteAdmin)
-admin.site.register(Cart, CartAdmin)

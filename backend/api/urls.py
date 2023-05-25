@@ -1,7 +1,5 @@
 from django.urls import include, path
-
 from rest_framework import routers
-
 
 from .views import (
     CartViewSet,
@@ -10,7 +8,6 @@ from .views import (
     RecipeViewSet,
     TagViewSet,
 )
-
 
 router = routers.DefaultRouter()
 
