@@ -1,4 +1,5 @@
 from django.core import validators
+
 from django.db import models
 
 
@@ -9,6 +10,7 @@ class Tag(models.Model):
         max_length=150,
         help_text="Введите название",
     )
+
     color = models.CharField(
         "Цвет",
         unique=True,
@@ -21,6 +23,7 @@ class Tag(models.Model):
             )
         ],
     )
+
     slug = models.SlugField(
         "Slug",
         unique=True,
@@ -30,7 +33,9 @@ class Tag(models.Model):
 
     class Meta:
         ordering = ("name",)
+
         verbose_name = "Тег"
+
         verbose_name_plural = "Теги"
 
     def __str__(self) -> str:

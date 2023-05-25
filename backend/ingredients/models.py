@@ -7,6 +7,7 @@ class Ingredient(models.Model):
         max_length=150,
         help_text="Введите название",
     )
+
     measurement_unit = models.CharField(
         "Единица измерения",
         max_length=150,
@@ -15,11 +16,14 @@ class Ingredient(models.Model):
 
     class Meta:
         verbose_name = "Ингредиент"
+
         verbose_name_plural = "Ингредиенты"
+
         ordering = (
             "name",
             "measurement_unit",
         )
+
         constraints = [
             models.UniqueConstraint(
                 name="unique_ingridient",

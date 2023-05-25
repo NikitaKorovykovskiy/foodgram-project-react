@@ -1,13 +1,18 @@
 from django.urls import include, path
+
 from rest_framework.routers import DefaultRouter
+
 
 from .views import SubscribeUserViewSet
 
+
 app_name = "user"
 
+
 router = DefaultRouter()
+
 router.register("users", SubscribeUserViewSet, basename="users")
-router.register("subscriptions", SubscribeUserViewSet, basename="users")
+
 
 urlpatterns = [
     path("", include(router.urls)),

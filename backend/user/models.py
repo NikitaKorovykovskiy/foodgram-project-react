@@ -1,11 +1,14 @@
 from django.contrib.auth.models import AbstractUser
+
 from django.db import models
 
 
 class User(AbstractUser):
+
     """Расширенная модель пользователя"""
 
     USER = "user"
+
     ADMIN = "admin"
 
     ROLE_CHOICES = [
@@ -19,30 +22,36 @@ class User(AbstractUser):
         verbose_name="Уникальное имя",
         help_text="Введите уникальное имя пользователя",
     )
+
     password = models.CharField(max_length=150, verbose_name="пароль")
+
     first_name = models.CharField(
         max_length=150,
         blank=True,
         verbose_name="Имя",
         help_text="Введите имя пользователя",
     )
+
     last_name = models.CharField(
         max_length=150,
         blank=True,
         verbose_name="Фамилия",
         help_text="Введите фамилию пользователя",
     )
+
     email = models.EmailField(
         max_length=254,
         unique=True,
         verbose_name="Электронная почта",
         help_text="Введите электронную почту пользователя",
     )
+
     is_subscribed = models.BooleanField(
         default=False,
         verbose_name="Подписка на данного пользователя",
         help_text="Отметьте для подписки на данного пользователя",
     )
+
     role = models.CharField(
         "Пользовательская роль",
         max_length=15,
@@ -52,6 +61,7 @@ class User(AbstractUser):
 
     class Meta:
         verbose_name = "Пользователь"
+
         verbose_name_plural = "Пользователи"
 
     def __str__(self):
@@ -74,6 +84,7 @@ class Subscribe(models.Model):
         verbose_name="Пользователь",
         help_text="Выберите пользователя, который подписывается",
     )
+
     following = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -84,6 +95,7 @@ class Subscribe(models.Model):
 
     class Meta:
         verbose_name = "Подписка"
+
         verbose_name_plural = "Подписки"
 
     def __str__(self):
