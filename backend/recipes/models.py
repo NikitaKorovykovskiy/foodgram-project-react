@@ -61,11 +61,6 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    created = models.DateTimeField(
-        "Дата создания",
-        auto_now_add=True,
-        help_text="Автоматически устанавливается текущая дата и время",
-    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -111,7 +106,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
-        ordering = ("created",)
+        ordering = ("-id",)
 
     def __str__(self):
         return self.name
