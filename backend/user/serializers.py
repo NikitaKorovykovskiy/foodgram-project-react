@@ -111,7 +111,6 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Нельзя использовать такое имя."
             )
-
         if User.objects.filter(username=data).exists():
             raise serializers.ValidationError(
                 "Пользователь с таким именем уже существует."
