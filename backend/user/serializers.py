@@ -1,8 +1,7 @@
-from django.conf import settings
-from rest_framework import serializers
-from user.models import Subscribe, User
-
 from api.serializers import ShortRecipeSerializer
+from rest_framework import serializers
+from rest_framework.status import HTTP_400_BAD_REQUEST
+from user.models import Subscribe, User
 
 
 class UserShowSerializer(serializers.ModelSerializer):
@@ -137,13 +136,9 @@ class TokenSerializer(serializers.Serializer):
 class SubscribeShowSerializer(UserShowSerializer):
     """Сериализатор для вывода пользователя/списка пользователей."""
 
-    email = serializers.ReadOnlyField(source="following.email")
-    id = serializers.ReadOnlyField(source="following.id")
-    username = serializers.ReadOnlyField(source="following.username")
-    first_name = serializers.ReadOnlyField(source="following.first_name")
-    last_name = serializers.ReadOnlyField(source="following.last_name")
-    is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -155,22 +150,51 @@ class SubscribeShowSerializer(UserShowSerializer):
             "last_name",
             "is_subscribed",
             "recipes",
+            "recipes_count",
         )
+        read_only_fields = ("email", "username", "first_name", "last_name")
 
-    def get_is_subscribed(self, username):
-        """Если мы запрашиваем этот метод — мы подписаны на пользователя"""
-        return True
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
     def get_recipes(self, obj):
-        """Получаем рецепты пользователя."""
-        limit = (
-            self.context.get("request").query_params.get("recipes_limit")
-            or settings.LIMITRECIPE
-        )
+        request = self.context.get("request")
+        recipes_limit = request.GET.get("recipes_limit")
         recipes = obj.recipes.all()
-        if limit:
-            recipes = recipes[: int(limit)]
+        if recipes_limit:
+            recipes = recipes[: int(recipes_limit)]
         serializer = ShortRecipeSerializer(
             recipes, many=True, read_only=True
         )
         return serializer.data
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get("request")
+        if request.user.is_anonymous:
+            return False
+        return Subscribe.objects.filter(
+            user=request.user, author=obj
+        ).exists()
+
+    def validate(self, data):
+        user = self.context.get("request").user
+        author = self.instance
+        if user == author:
+            raise serializers.ValidationError(
+                detail="Пользователь не может подписаться сам на себя",
+                code=HTTP_400_BAD_REQUEST,
+            )
+        if Subscribe.objects.filter(user=user, author=author).exists():
+            raise serializers.ValidationError(
+                detail=(
+                    "Пользователь не может подписаться "
+                    "на другого пользователя дважды"
+                ),
+                code=HTTP_400_BAD_REQUEST,
+            )
+        return data
+
+    def create(self, validated_data):
+        user = self.context.get("request").user
+        author = validated_data.get("author")
+        return Subscribe.objects.create(user=user, author=author)
