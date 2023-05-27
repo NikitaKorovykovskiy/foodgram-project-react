@@ -1,16 +1,10 @@
 from api.serializers import ShortRecipeSerializer
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from user.models import Subscribe, User
 
 
-class UserShowSerializer(serializers.ModelSerializer):
-    """Сериализатор для вывода пользователя/списка пользователей."""
-
-    email = serializers.EmailField(required=True)
-    username = serializers.CharField(max_length=150, required=True)
-    first_name = serializers.CharField(max_length=150, required=True)
-    last_name = serializers.CharField(max_length=150, required=True)
+class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -24,14 +18,11 @@ class UserShowSerializer(serializers.ModelSerializer):
             "is_subscribed",
         )
 
-    def get_is_subscribed(self, username):
-        user = self.context["request"].user
-        return (
-            not user.is_anonymous
-            and Subscribe.objects.filter(
-                user=user, following=username
-            ).exists()
-        )
+    def get_is_subscribed(self, obj):
+        user = self.context.get("request").user
+        if user.is_anonymous:
+            return False
+        return Subscribe.objects.filter(user=user, author=obj).exists()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -136,65 +127,41 @@ class TokenSerializer(serializers.Serializer):
 class SubscribeShowSerializer(UserShowSerializer):
     """Сериализатор для вывода пользователя/списка пользователей."""
 
-    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
-    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
 
-    class Meta:
-        model = User
-        fields = (
-            "email",
-            "id",
-            "username",
-            "first_name",
-            "last_name",
-            "is_subscribed",
-            "recipes",
+    class Meta(CustomUserSerializer.Meta):
+        fields = CustomUserSerializer.Meta.fields + (
             "recipes_count",
+            "recipes",
         )
-        read_only_fields = ("email", "username", "first_name", "last_name")
+        read_only_fields = ("email", "username")
+
+    def validate(self, data):
+        author = self.instance
+        user = self.context.get("request").user
+        if Subscribe.objects.filter(author=author, user=user).exists():
+            raise serializers.ValidationError(
+                detail="Вы уже подписались на этого автора!",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+        if user == author:
+            raise serializers.ValidationError(
+                detail="Вы не можете подписаться на самого себя!",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+        return data
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
     def get_recipes(self, obj):
         request = self.context.get("request")
-        recipes_limit = request.GET.get("recipes_limit")
+        limit = request.GET.get("recipes_limit")
         recipes = obj.recipes.all()
-        if recipes_limit:
-            recipes = recipes[: int(recipes_limit)]
+        if limit:
+            recipes = recipes[: int(limit)]
         serializer = ShortRecipeSerializer(
             recipes, many=True, read_only=True
         )
         return serializer.data
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get("request")
-        if request.user.is_anonymous:
-            return False
-        return Subscribe.objects.filter(
-            user=request.user, author=obj
-        ).exists()
-
-    def validate(self, data):
-        user = self.context.get("request").user
-        author = self.instance
-        if user == author:
-            raise serializers.ValidationError(
-                detail="Пользователь не может подписаться сам на себя",
-                code=HTTP_400_BAD_REQUEST,
-            )
-        if Subscribe.objects.filter(user=user, author=author).exists():
-            raise serializers.ValidationError(
-                detail=(
-                    "Пользователь не может подписаться "
-                    "на другого пользователя дважды"
-                ),
-                code=HTTP_400_BAD_REQUEST,
-            )
-        return data
-
-    def create(self, validated_data):
-        user = self.context.get("request").user
-        author = validated_data.get("author")
-        return Subscribe.objects.create(user=user, author=author)

@@ -22,7 +22,7 @@ class SubscribeUserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        permission_classes=(permissions.IsAuthenticatedOrReadOnly,),
+        permission_classes=(IsAdminOrReadOnly,),
     )
     def subscriptions(self, request):
         follows = User.objects.filter(following__user=request.user)
