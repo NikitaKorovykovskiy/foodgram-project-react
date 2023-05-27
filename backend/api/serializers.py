@@ -1,8 +1,5 @@
 from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-
 from recipes.models import (
     Cart,
     Favorite,
@@ -12,6 +9,8 @@ from recipes.models import (
     Tag,
     TagRecipe,
 )
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from user.models import User
 
 

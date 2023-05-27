@@ -1,13 +1,5 @@
 from http import HTTPStatus
 
-from django.conf import settings
-from django.db.models import Sum
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django_filters import rest_framework as filters
-from rest_framework import permissions, status, viewsets
-from rest_framework.response import Response
-
 from api.filter import AuthorAndTagFilter, IngredientSearchFilter
 from api.paginators import LimitPageNumberPagination
 from api.permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly
@@ -19,6 +11,11 @@ from api.serializers import (
     RecipePostSerializer,
     TagSerializer,
 )
+from django.conf import settings
+from django.db.models import Sum
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django_filters import rest_framework as filters
 from recipes.models import (
     Cart,
     Favorite,
@@ -27,6 +24,8 @@ from recipes.models import (
     Recipe,
     Tag,
 )
+from rest_framework import permissions, status, viewsets
+from rest_framework.response import Response
 
 CONTENT_TYPE = "text/plain"
 

@@ -1,10 +1,16 @@
 from api.serializers import ShortRecipeSerializer
-from rest_framework import serializers, status
-from rest_framework.status import HTTP_400_BAD_REQUEST
+from django.conf import settings
+from rest_framework import serializers
 from user.models import Subscribe, User
 
 
-class CustomUserSerializer(UserSerializer):
+class UserShowSerializer(serializers.ModelSerializer):
+    """Сериализатор для вывода пользователя/списка пользователей."""
+
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(max_length=150, required=True)
+    first_name = serializers.CharField(max_length=150, required=True)
+    last_name = serializers.CharField(max_length=150, required=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -18,11 +24,14 @@ class CustomUserSerializer(UserSerializer):
             "is_subscribed",
         )
 
-    def get_is_subscribed(self, obj):
-        user = self.context.get("request").user
-        if user.is_anonymous:
-            return False
-        return Subscribe.objects.filter(user=user, author=obj).exists()
+    def get_is_subscribed(self, username):
+        user = self.context["request"].user
+        return (
+            not user.is_anonymous
+            and Subscribe.objects.filter(
+                user=user, following=username
+            ).exists()
+        )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -101,6 +110,7 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Нельзя использовать такое имя."
             )
+
         if User.objects.filter(username=data).exists():
             raise serializers.ValidationError(
                 "Пользователь с таким именем уже существует."
@@ -124,40 +134,31 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField(max_length=24)
 
 
-class SubscribeShowSerializer(UserShowSerializer):
+class SubscribeShowSerializer(serializers.ModelSerializer):
     """Сериализатор для вывода пользователя/списка пользователей."""
 
-    recipes_count = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
 
-    class Meta(CustomUserSerializer.Meta):
-        fields = CustomUserSerializer.Meta.fields + (
-            "recipes_count",
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
             "recipes",
         )
-        read_only_fields = ("email", "username")
-
-    def validate(self, data):
-        author = self.instance
-        user = self.context.get("request").user
-        if Subscribe.objects.filter(author=author, user=user).exists():
-            raise serializers.ValidationError(
-                detail="Вы уже подписались на этого автора!",
-                code=status.HTTP_400_BAD_REQUEST,
-            )
-        if user == author:
-            raise serializers.ValidationError(
-                detail="Вы не можете подписаться на самого себя!",
-                code=status.HTTP_400_BAD_REQUEST,
-            )
-        return data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
+        read_only_fields = ("email", "username", "first_name", "last_name")
 
     def get_recipes(self, obj):
-        request = self.context.get("request")
-        limit = request.GET.get("recipes_limit")
+        """Получаем рецепты пользователя."""
+        limit = (
+            self.context.get("request").query_params.get("recipes_limit")
+            or settings.LIMITRECIPE
+        )
         recipes = obj.recipes.all()
         if limit:
             recipes = recipes[: int(limit)]
@@ -165,3 +166,11 @@ class SubscribeShowSerializer(UserShowSerializer):
             recipes, many=True, read_only=True
         )
         return serializer.data
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get("request")
+        if request.user.is_anonymous:
+            return False
+        return Subscribe.objects.filter(
+            user=request.user, following=obj
+        ).exists()
